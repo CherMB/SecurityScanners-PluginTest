@@ -5,7 +5,6 @@ pipeline {
         PYTHON_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz"
         PYTHON_DIR = "${env.WORKSPACE}/python"
         VENV_DIR = "${env.WORKSPACE}/venv"
-        CHECKOV_DIR = "${env.WORKSPACE}/checkov-project" // Ensure this path exists in your repo
         CHECKOV_REPORT = "checkov-report.sarif"
         CHECKOV_TARGET_DIR = "${env.WORKSPACE}/terragoat"
     }
@@ -70,35 +69,20 @@ pipeline {
                 echo "📦 Installing Checkov using Pipenv..."
                 sh '''
                     source "$VENV_DIR/bin/activate"
-                    cd $CHECKOV_DIR
                     pipenv install checkov
                     echo "✅ Checkov installed."
                 '''
             }
         }
 
-        stage('Verify Checkov Directory') {
-            steps {
-                script {
-                    echo "Checking if Checkov directory exists: ${CHECKOV_DIR}"
-                    sh "ls -l ${CHECKOV_DIR}"
-                }
-            }
-        }
-
         stage('Run Checkov Scan') {
             steps {
                 script {
-                    try {
                         echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
                         sh """
+                        source "$VENV_DIR/bin/activate"
                         pipenv run checkov -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
                         """
-                    } catch (Exception e) {
-                        echo "Error running Checkov scan: ${e.message}"
-                        currentBuild.result = 'FAILURE'
-                        throw e
-                    }
                 }
             }
         }
