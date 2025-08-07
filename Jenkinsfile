@@ -9,33 +9,57 @@ pipeline {
     stages {
         stage('Install Checkov') {
             steps {
-                sh '''
-                echo "Installing Checkov..."
-                python3 -m venv venv
-                . venv/bin/activate
-                pip install --upgrade pip
-                pip install checkov
-                checkov --version
-                '''
+                script {
+                    try {
+                        echo "Installing Checkov..."
+                        sh '''
+                        which python3 || echo "Python3 not found!"
+                        python3 --version || echo "Python3 not found!"
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip
+                        pip install checkov
+                        checkov --version
+                        '''
+                    } catch (Exception e) {
+                        echo "Error installing Checkov: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
             }
         }
 
         stage('Clone Vulnerable Repo') {
             steps {
-                sh '''
-                echo "Cloning vulnerable repo (Terragoat)..."
-                git clone https://github.com/bridgecrewio/terragoat ${CHECKOV_TARGET_DIR}
-                '''
+                script {
+                    try {
+                        echo "Cloning vulnerable repo (Terragoat)..."
+                        sh '''
+                        git clone https://github.com/bridgecrewio/terragoat ${CHECKOV_TARGET_DIR}
+                        '''
+                    } catch (Exception e) {
+                        echo "Error cloning repo: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
             }
         }
 
         stage('Run Checkov Scan') {
             steps {
-                sh '''
-                echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
-                . venv/bin/activate
-                checkov -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
-                '''
+                script {
+                    try {
+                        echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
+                        . venv/bin/activate
+                        checkov -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
+                    } catch (Exception e) {
+                        echo "Error running Checkov scan: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
             }
         }
 
