@@ -77,21 +77,20 @@ pipeline {
 
         stage('Run Checkov Scan') {
             steps {
-                script {
-                    echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
-                    sh """
-                        source "$VENV_DIR/bin/activate"
-                        pipenv run checkov --no-guide -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
-                    """
-                }
+                echo "🚨 Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
+                sh '''
+                    source "$VENV_DIR/bin/activate"
+                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -d "$CHECKOV_TARGET_DIR" -o sarif > "$CHECKOV_REPORT"
+                '''
             }
         }
 
         stage('Display SARIF Report') {
             steps {
+                echo "📄 Displaying SARIF report:"
                 sh '''
-                echo "=== Checkov SARIF Report ==="
-                cat ${CHECKOV_REPORT}
+                    echo "=== Checkov SARIF Report ==="
+                    cat "$CHECKOV_REPORT"
                 '''
             }
         }
