@@ -7,15 +7,35 @@ pipeline {
     }
 
     stages {
-        stage('Install Pipenv & Checkov') {
+        stage('Install Python, Pipenv & Checkov') {
             steps {
                 script {
                     try {
-                        echo "Installing Pipenv and Checkov..."
-                        // Install pipenv and Checkov using pipenv
+                        echo "Installing Python, Pipenv, and Checkov..."
+
+                        // Ensure Python and pip are installed
                         sh '''
-                        which pipenv || echo "Pipenv not found!"
-                        pip install pipenv
+                        if ! which python3; then
+                            echo "Python3 not found, installing..."
+                            sudo apt update && sudo apt install -y python3 python3-pip
+                        else
+                            echo "Python3 is already installed"
+                        fi
+
+                        if ! which pip; then
+                            echo "Pip not found, installing..."
+                            sudo apt install -y python3-pip
+                        else
+                            echo "Pip is already installed"
+                        fi
+
+                        if ! which pipenv; then
+                            echo "Pipenv not found, installing..."
+                            pip3 install pipenv
+                        else
+                            echo "Pipenv is already installed"
+                        fi
+
                         pipenv install checkov
                         pipenv run checkov --version
                         '''
@@ -28,22 +48,6 @@ pipeline {
             }
         }
 
-        stage('Clone Vulnerable Repo') {
-            steps {
-                script {
-                    try {
-                        echo "Cloning vulnerable repo (Terragoat)..."
-                        sh """
-                        git clone https://github.com/bridgecrewio/terragoat ${CHECKOV_TARGET_DIR}
-                        """
-                    } catch (Exception e) {
-                        echo "Error cloning repo: ${e.message}"
-                        currentBuild.result = 'FAILURE'
-                        throw e
-                    }
-                }
-            }
-        }
 
         stage('Run Checkov Scan') {
             steps {
@@ -75,7 +79,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '*.sarif', fingerprint: true
+            archiveArtifacts artifacts: '${CHECKOV_REPORT}', fingerprint: true
         }
     }
 }
