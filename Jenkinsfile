@@ -7,22 +7,20 @@ pipeline {
     }
 
     stages {
-        stage('Install Checkov') {
+        stage('Install Pipenv & Checkov') {
             steps {
                 script {
                     try {
-                        echo "Installing Checkov..."
+                        echo "Installing Pipenv and Checkov..."
+                        // Install pipenv and Checkov using pipenv
                         sh '''
-                        which python3 || echo "Python3 not found!"
-                        python3 --version || echo "Python3 not found!"
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install --upgrade pip
-                        pip install checkov
-                        checkov --version
+                        which pipenv || echo "Pipenv not found!"
+                        pip install pipenv
+                        pipenv install checkov
+                        pipenv run checkov --version
                         '''
                     } catch (Exception e) {
-                        echo "Error installing Checkov: ${e.message}"
+                        echo "Error installing Pipenv/Checkov: ${e.message}"
                         currentBuild.result = 'FAILURE'
                         throw e
                     }
@@ -52,9 +50,9 @@ pipeline {
                 script {
                     try {
                         echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
+                        // Run checkov scan using pipenv
                         sh """
-                        . venv/bin/activate
-                        checkov -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
+                        pipenv run checkov -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
                         """
                     } catch (Exception e) {
                         echo "Error running Checkov scan: ${e.message}"
@@ -67,10 +65,10 @@ pipeline {
 
         stage('Display SARIF Report') {
             steps {
-                sh """
+                sh '''
                 echo "=== Checkov SARIF Report ==="
                 cat ${CHECKOV_REPORT}
-                """
+                '''
             }
         }
     }
