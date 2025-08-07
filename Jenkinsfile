@@ -2,28 +2,77 @@ pipeline {
     agent any
 
     environment {
+        PYTHON_DIR = "${env.WORKSPACE}/python"  // Same Python path as first pipeline
+        VENV_DIR = "${env.WORKSPACE}/venv"     // Virtual Environment directory
+        CHECKOV_DIR = "${env.WORKSPACE}/checkov-project" // Directory for your Checkov code
         CHECKOV_REPORT = "checkov-report.sarif"
         CHECKOV_TARGET_DIR = "${env.WORKSPACE}/terragoat"
     }
 
     stages {
-        stage('Install Pipenv & Checkov') {
+        // Step 1: Download and set up prebuilt Python binary
+        stage('Download Prebuilt Python') {
             steps {
-                script {
-                    try {
-                        echo "Installing Pipenv and Checkov..."
-                        // Install pipenv without sudo
-                        sh 'curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python3 -'
-                        // Install checkov via pipenv
-                        sh 'pipenv install checkov'
-                        // Install checkov
-                        sh 'pipenv run checkov --version'
-                    } catch (Exception e) {
-                        echo "Error installing Pipenv/Checkov: ${e.message}"
-                        currentBuild.result = 'FAILURE'
-                        throw e
-                    }
-                }
+                echo ":arrow_down: Downloading prebuilt Python binary..."
+                sh '''
+                    mkdir -p $PYTHON_DIR
+                    cd $PYTHON_DIR
+                    curl -L -o python.tar.gz $PYTHON_URL
+                    tar -xzf python.tar.gz --strip-components=1
+                    echo ":white_check_mark: Python extracted to: $PYTHON_DIR"
+                '''
+            }
+        }
+
+        // Step 2: Verify Python & Pip installation
+        stage('Verify Python & Pip') {
+            steps {
+                sh '''
+                    $PYTHON_DIR/bin/python3.11 --version
+                    $PYTHON_DIR/bin/pip3.11 --version
+                '''
+            }
+        }
+
+        // Step 3: Create Virtual Environment for Pipenv
+        stage('Create Virtual Environment') {
+            steps {
+                echo "🐍 Creating virtual environment if missing..."
+                sh '''
+                    if [ ! -d "$VENV_DIR" ]; then
+                        $PYTHON_DIR/bin/python3.11 -m venv "$VENV_DIR"
+                    else
+                        echo "✅ Virtualenv already exists."
+                    fi
+                '''
+            }
+        }
+
+        // Step 4: Install Pipenv if missing
+        stage('Install Pipenv if Missing') {
+            steps {
+                echo "📦 Installing Pipenv if missing..."
+                sh '''
+                    source "$VENV_DIR/bin/activate"
+                    if ! pip show pipenv > /dev/null 2>&1; then
+                        pip install pipenv
+                    else
+                        echo "✅ Pipenv already installed."
+                    fi
+                '''
+            }
+        }
+
+        // Step 5: Install Checkov via Pipenv
+        stage('Install Checkov via Pipenv') {
+            steps {
+                echo "📦 Installing Checkov using Pipenv..."
+                sh '''
+                    source "$VENV_DIR/bin/activate"
+                    cd $CHECKOV_DIR
+                    pipenv install checkov
+                    echo "✅ Checkov installed."
+                '''
             }
         }
 
