@@ -7,38 +7,17 @@ pipeline {
     }
 
     stages {
-        stage('Install Python, Pipenv & Checkov') {
+        stage('Install Pipenv & Checkov') {
             steps {
                 script {
                     try {
-                        echo "Installing Python, Pipenv, and Checkov..."
-
-                        // Ensure Python and pip are installed
-                        sh '''
-                        if ! which python3; then
-                            echo "Python3 not found, installing..."
-                            sudo apt update && sudo apt install -y python3 python3-pip
-                        else
-                            echo "Python3 is already installed"
-                        fi
-
-                        if ! which pip; then
-                            echo "Pip not found, installing..."
-                            sudo apt install -y python3-pip
-                        else
-                            echo "Pip is already installed"
-                        fi
-
-                        if ! which pipenv; then
-                            echo "Pipenv not found, installing..."
-                            pip3 install pipenv
-                        else
-                            echo "Pipenv is already installed"
-                        fi
-
-                        pipenv install checkov
-                        pipenv run checkov --version
-                        '''
+                        echo "Installing Pipenv and Checkov..."
+                        // Install pipenv without sudo
+                        sh 'curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python3 -'
+                        // Install checkov via pipenv
+                        sh 'pipenv install checkov'
+                        // Install checkov
+                        sh 'pipenv run checkov --version'
                     } catch (Exception e) {
                         echo "Error installing Pipenv/Checkov: ${e.message}"
                         currentBuild.result = 'FAILURE'
