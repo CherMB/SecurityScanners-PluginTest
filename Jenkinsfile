@@ -78,11 +78,12 @@ pipeline {
         stage('Run Checkov Scan') {
             steps {
                 script {
-                        echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
-                        sh """
+                    echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
+                    sh """
                         source "$VENV_DIR/bin/activate"
-                        pipenv run checkov -d ${CHECKOV_TARGET_DIR} -o sarif --no-guide > ${CHECKOV_REPORT}
-                        """
+                        export CHECKOV_DISABLE_GUIDE=true
+                        pipenv run checkov -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
+                    """
                 }
             }
         }
