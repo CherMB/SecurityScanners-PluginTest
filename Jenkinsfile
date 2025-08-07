@@ -2,38 +2,39 @@ pipeline {
     agent any
 
     environment {
-        GRYPE_BINARY_DIR = "${env.WORKSPACE}/bin"
-        GRYPE_SCAN_TARGET = "${env.WORKSPACE}/test-workflow-ninja"
-        GRYPE_REPORT = "grype-report.sarif"
+        CHECKOV_REPORT = "checkov-report.sarif"
+        CHECKOV_TARGET_DIR = "${env.WORKSPACE}/terragoat"
     }
 
     stages {
-        stage('Install Grype') {
+        stage('Install Checkov') {
             steps {
                 sh '''
-                echo "Installing Grype..."
-                mkdir -p ${GRYPE_BINARY_DIR}
-                export PATH=${GRYPE_BINARY_DIR}:$PATH
-                curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b ${GRYPE_BINARY_DIR}
-                grype version
-                '''
-            }
-        }
-        
-        stage('List Files') {
-            steps {
-                sh '''
-                echo "📁 Current workspace contents:"
-                ls -la ${WORKSPACE}
+                echo "Installing Checkov..."
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install --upgrade pip
+                pip install checkov
+                checkov --version
                 '''
             }
         }
 
-        stage('Scan Folder with Grype') {
+        stage('Clone Vulnerable Repo') {
             steps {
                 sh '''
-                echo "Scanning folder '${GRYPE_SCAN_TARGET}' with Grype..."
-                ${GRYPE_BINARY_DIR}/grype ${GRYPE_SCAN_TARGET} -o sarif > ${GRYPE_REPORT}
+                echo "Cloning vulnerable repo (Terragoat)..."
+                git clone https://github.com/bridgecrewio/terragoat ${CHECKOV_TARGET_DIR}
+                '''
+            }
+        }
+
+        stage('Run Checkov Scan') {
+            steps {
+                sh '''
+                echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
+                . venv/bin/activate
+                checkov -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
                 '''
             }
         }
@@ -41,11 +42,16 @@ pipeline {
         stage('Display SARIF Report') {
             steps {
                 sh '''
-                echo "=== Grype SARIF Report ==="
-                cat ${GRYPE_REPORT}
+                echo "=== Checkov SARIF Report ==="
+                cat ${CHECKOV_REPORT}
                 '''
             }
         }
+    }
 
+    post {
+        always {
+            archiveArtifacts artifacts: '*.sarif', fingerprint: true
+        }
     }
 }
