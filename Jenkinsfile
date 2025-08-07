@@ -7,6 +7,9 @@ pipeline {
         VENV_DIR = "${env.WORKSPACE}/venv"
         CHECKOV_REPORT = "checkov-report.sarif"
         CHECKOV_TARGET_DIR = "${env.WORKSPACE}/terragoat"
+        CHECKOV_DISABLE_GUIDE = "true"
+        BC_API_KEY = ""
+        PRISMA_API_URL = ""
     }
 
     stages {
@@ -80,7 +83,7 @@ pipeline {
                 echo "🚨 Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
                 sh '''
                     source "$VENV_DIR/bin/activate"
-                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -d "$CHECKOV_TARGET_DIR" -o sarif > "$CHECKOV_REPORT"
+                    BC_API_KEY= PRISMA_API_URL= CHECKOV_DISABLE_GUIDE=true pipenv run checkov -d "$CHECKOV_TARGET_DIR" -o sarif > "$CHECKOV_REPORT"
                 '''
             }
         }
