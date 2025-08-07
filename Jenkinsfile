@@ -35,9 +35,9 @@ pipeline {
                 script {
                     try {
                         echo "Cloning vulnerable repo (Terragoat)..."
-                        sh '''
+                        sh """
                         git clone https://github.com/bridgecrewio/terragoat ${CHECKOV_TARGET_DIR}
-                        '''
+                        """
                     } catch (Exception e) {
                         echo "Error cloning repo: ${e.message}"
                         currentBuild.result = 'FAILURE'
@@ -52,8 +52,10 @@ pipeline {
                 script {
                     try {
                         echo "Running Checkov scan on ${CHECKOV_TARGET_DIR}..."
+                        sh """
                         . venv/bin/activate
                         checkov -d ${CHECKOV_TARGET_DIR} -o sarif > ${CHECKOV_REPORT}
+                        """
                     } catch (Exception e) {
                         echo "Error running Checkov scan: ${e.message}"
                         currentBuild.result = 'FAILURE'
@@ -65,10 +67,10 @@ pipeline {
 
         stage('Display SARIF Report') {
             steps {
-                sh '''
+                sh """
                 echo "=== Checkov SARIF Report ==="
                 cat ${CHECKOV_REPORT}
-                '''
+                """
             }
         }
     }
