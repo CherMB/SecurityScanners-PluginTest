@@ -73,8 +73,9 @@ pipeline {
                 echo "📦 Installing Checkov using Pipenv..."
                 sh '''
                     source "$VENV_DIR/bin/activate"
+                    pip install certifi
                     pipenv install checkov
-                    echo "✅ Checkov installed."
+                    echo "✅ Checkov and certifi installed."
                 '''
             }
         }
@@ -84,7 +85,8 @@ pipeline {
                 echo "🚨 Running Checkov scan on a specific file (main.tf)..."
                 sh '''
                     source "$VENV_DIR/bin/activate"
-                    BC_API_KEY= PRISMA_API_URL= CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT"
+                    export SSL_CERT_FILE=$(python -m certifi)
+                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT"
                 '''
             }
         }
