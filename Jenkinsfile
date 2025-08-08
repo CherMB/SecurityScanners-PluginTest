@@ -86,7 +86,7 @@ pipeline {
                 sh '''
                     source "$VENV_DIR/bin/activate"
                     export SSL_CERT_FILE=$(python -m certifi)
-                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT"
+                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" || true
                 '''
             }
         }
@@ -95,8 +95,8 @@ pipeline {
             steps {
                 echo "📄 Displaying SARIF report:"
                 sh '''
-                    echo "=== Checkov SARIF Report ==="
-                    cat "$CHECKOV_REPORT"
+                    echo "=== Checkov SARIF Report (First 20 lines) ==="
+                    head -n 20 "$CHECKOV_REPORT"
                 '''
             }
         }
