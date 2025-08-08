@@ -104,7 +104,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '${CHECKOV_REPORT}', fingerprint: true
+            archiveArtifacts artifacts: "${env.CHECKOV_REPORT}", fingerprint: true
         }
     }
 }
