@@ -19,10 +19,11 @@ pipeline {
             steps {
                 echo "⬇️ Installing Go..."
                 sh '''
-                    mkdir -p "$GO_DIR"
-                    curl -LO "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
-                    tar -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
-                    mv go "$GO_DIR"
+                    export GO_TEMP_DIR=$(mktemp -d)
+                    curl -LO "https://go.dev/dl/go1.21.5.linux-amd64.tar.gz"
+                    tar -xzf go1.21.5.linux-amd64.tar.gz -C "$GO_TEMP_DIR"
+                    rm -rf "$GO_DIR"
+                    mv "$GO_TEMP_DIR/go" "$GO_DIR"
                     echo "✅ Go installed at $GO_DIR"
                 '''
             }
