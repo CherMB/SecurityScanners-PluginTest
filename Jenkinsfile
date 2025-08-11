@@ -7,9 +7,27 @@ pipeline {
         SOURCE_DIR = "${env.WORKSPACE}/test-workflow-ninja" 
         DB_NAME = "my-app-db-1"
         SARIF_OUTPUT = "result1.sarif"
+        GO_VERSION = "1.21.5"
+        GO_DIR = "${env.WORKSPACE}/go"
+        GOROOT = "${env.WORKSPACE}/go"
+        GOPATH = "${env.WORKSPACE}/go-packages"
+        PATH = "${env.WORKSPACE}/go/bin:${env.PATH}"
     }
 
     stages {
+        stage('Install Go') {
+            steps {
+                echo "⬇️ Installing Go..."
+                sh '''
+                    mkdir -p "$GO_DIR"
+                    curl -LO "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
+                    tar -C "$WORKSPACE" -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
+                    mv "${WORKSPACE}/go" "$GO_DIR"
+                    echo "✅ Go installed at $GO_DIR"
+                '''
+            }
+        }
+
         stage('Download and Extract CodeQL') {
             steps {
                 echo "⬇️ Downloading CodeQL bundle..."
@@ -26,10 +44,13 @@ pipeline {
             steps {
                 echo "📦 Creating CodeQL database from source..."
                 sh '''
-                    rm -rf "$DB_NAME"  # Clean up from previous runs
+                    rm -rf "$DB_NAME"
+                    export PATH="$GO_DIR/bin:$PATH"
+                    export GOROOT="$GO_DIR"
+                    export GOPATH="$GOPATH"
                     "$CODEQL_DIR/codeql" database create "$DB_NAME" \
-                    --language=go \
-                    --source-root="$SOURCE_DIR"
+                      --language=go \
+                      --source-root="$SOURCE_DIR"
                 '''
             }
         }
@@ -49,10 +70,14 @@ pipeline {
         stage('Display SARIF Report') {
             steps {
                 echo "📄 SARIF Report Preview:"
-                sh "head -n 20 $SARIF_OUTPUT || true"
+                sh '''
+                    echo "=== SARIF Report Preview ==="
+                    head -n 20 "$SARIF_OUTPUT" || echo "SARIF not generated"
+                '''
             }
         }
     }
+
 
     post {
         always {
