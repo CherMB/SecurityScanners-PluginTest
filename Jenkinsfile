@@ -21,8 +21,8 @@ pipeline {
                 sh '''
                     mkdir -p "$GO_DIR"
                     curl -LO "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
-                    tar -C "$WORKSPACE" -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
-                    mv "${WORKSPACE}/go" "$GO_DIR"
+                    tar -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
+                    mv go "$GO_DIR"
                     echo "✅ Go installed at $GO_DIR"
                 '''
             }
