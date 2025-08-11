@@ -2,109 +2,60 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz"
-        PYTHON_DIR = "${env.WORKSPACE}/python"
-        VENV_DIR = "${env.WORKSPACE}/venv"
-        CHECKOV_REPORT = "checkov-report.sarif"
-        CHECKOV_TARGET_DIR = "${env.WORKSPACE}/terragoat"
-        CHECKOV_TARGET_FILE = "${env.WORKSPACE}/main.tf"
-        CHECKOV_DISABLE_GUIDE = "true"
-        BC_API_KEY = ""
-        PRISMA_API_URL = ""
+        CODEQL_URL = "https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz"
+        CODEQL_DIR = "${env.WORKSPACE}/codeql"
+        SOURCE_DIR = "${env.WORKSPACE}/test-workflow-ninja" 
+        DB_NAME = "my-app-db-1"
+        SARIF_OUTPUT = "result1.sarif"
     }
 
     stages {
-        // Step 1: Download and set up prebuilt Python binary
-        stage('Download Prebuilt Python') {
+        stage('Download and Extract CodeQL') {
             steps {
-                echo ":arrow_down: Downloading prebuilt Python binary..."
+                echo "⬇️ Downloading CodeQL bundle..."
                 sh '''
-                    mkdir -p $PYTHON_DIR
-                    cd $PYTHON_DIR
-                    curl -L -o python.tar.gz $PYTHON_URL
-                    tar -xzf python.tar.gz --strip-components=1
-                    echo ":white_check_mark: Python extracted to: $PYTHON_DIR"
+                    mkdir -p "$CODEQL_DIR"
+                    curl -L "$CODEQL_URL" -o codeql-bundle.tar.gz
+                    tar -xzf codeql-bundle.tar.gz -C "$CODEQL_DIR" --strip-components=1
+                    echo "✅ CodeQL installed to $CODEQL_DIR"
                 '''
             }
         }
 
-        // Step 2: Verify Python & Pip installation
-        stage('Verify Python & Pip') {
+        stage('Create CodeQL Database') {
             steps {
+                echo "📦 Creating CodeQL database from source..."
                 sh '''
-                    $PYTHON_DIR/bin/python3.11 --version
-                    $PYTHON_DIR/bin/pip3.11 --version
+                    "$CODEQL_DIR/codeql" database create "$DB_NAME" \
+                      --language=go \
+                      --source-root="$SOURCE_DIR"
                 '''
             }
         }
 
-        // Step 3: Create Virtual Environment for Pipenv
-        stage('Create Virtual Environment') {
+        stage('Analyze Code with CodeQL') {
             steps {
-                echo "🐍 Creating virtual environment if missing..."
+                echo "🔍 Running CodeQL analysis..."
                 sh '''
-                    if [ ! -d "$VENV_DIR" ]; then
-                        $PYTHON_DIR/bin/python3.11 -m venv "$VENV_DIR"
-                    else
-                        echo "✅ Virtualenv already exists."
-                    fi
-                '''
-            }
-        }
-
-        // Step 4: Install Pipenv if missing
-        stage('Install Pipenv if Missing') {
-            steps {
-                echo "📦 Installing Pipenv if missing..."
-                sh '''
-                    source "$VENV_DIR/bin/activate"
-                    if ! pip show pipenv > /dev/null 2>&1; then
-                        pip install pipenv
-                    else
-                        echo "✅ Pipenv already installed."
-                    fi
-                '''
-            }
-        }
-
-        // Step 5: Install Checkov via Pipenv
-        stage('Install Checkov via Pipenv') {
-            steps {
-                echo "📦 Installing Checkov using Pipenv..."
-                sh '''
-                    source "$VENV_DIR/bin/activate"
-                    pip install certifi
-                    pipenv install checkov
-                    echo "✅ Checkov and certifi installed."
-                '''
-            }
-        }
-
-        stage('Run Checkov Scan') {
-            steps {
-                echo "🚨 Running Checkov scan on a specific file (main.tf)..."
-                sh '''
-                    source "$VENV_DIR/bin/activate"
-                    export SSL_CERT_FILE=$(python -m certifi)
-                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" || true
+                    "$CODEQL_DIR/codeql" database analyze "$DB_NAME" \
+                      codeql/go-queries \
+                      --format=sarifv2.1.0 \
+                      --output="$SARIF_OUTPUT"
                 '''
             }
         }
 
         stage('Display SARIF Report') {
             steps {
-                echo "📄 Displaying SARIF report:"
-                sh '''
-                    echo "=== Checkov SARIF Report (First 20 lines) ==="
-                    head -n 20 "$CHECKOV_REPORT"
-                '''
+                echo "📄 SARIF Report Preview:"
+                sh "head -n 20 $SARIF_OUTPUT || true"
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: "${env.CHECKOV_REPORT}", fingerprint: true
+            archiveArtifacts artifacts: "${SARIF_OUTPUT}", fingerprint: true
         }
     }
 }
