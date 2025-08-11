@@ -4,7 +4,7 @@ pipeline {
     environment {
         CODEQL_URL = "https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz"
         CODEQL_DIR = "${env.WORKSPACE}/codeql"
-        SOURCE_DIR = "${env.WORKSPACE}/test-workflow-ninja" 
+        SOURCE_DIR = "${env.WORKSPACE}/test-go-project"
         DB_NAME = "my-app-db-1"
         SARIF_OUTPUT = "result1.sarif"
         GO_VERSION = "1.21.5"
