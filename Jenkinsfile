@@ -26,9 +26,10 @@ pipeline {
             steps {
                 echo "📦 Creating CodeQL database from source..."
                 sh '''
+                    rm -rf "$DB_NAME"  # Clean up from previous runs
                     "$CODEQL_DIR/codeql" database create "$DB_NAME" \
-                      --language=go \
-                      --source-root="$SOURCE_DIR"
+                    --language=go \
+                    --source-root="$SOURCE_DIR"
                 '''
             }
         }
