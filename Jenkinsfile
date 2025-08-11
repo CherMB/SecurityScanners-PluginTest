@@ -7,7 +7,7 @@ pipeline {
         VENV_DIR = "${env.WORKSPACE}/venv"
         CHECKOV_REPORT = "checkov-report.sarif"
         CHECKOV_TARGET_DIR = "${env.WORKSPACE}/terragoat"
-        CHECKOV_TARGET_FILE = "${env.WORKSPACE}/main.tf"
+        CHECKOV_TARGET_FILE = "${env.WORKSPACE}/minimain.tf"
         CHECKOV_DISABLE_GUIDE = "true"
         BC_API_KEY = ""
         PRISMA_API_URL = ""
