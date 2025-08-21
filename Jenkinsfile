@@ -68,22 +68,17 @@ pipeline {
             }
         }
 
-        stage('Display SARIF Report') {
+        stage('Publish SARIF to Dashboard') {
             steps {
-                echo "📄 SARIF Report Preview:"
-                sh '''
-                    echo "=== SARIF Report Preview ==="
-                    head -n 20 "$SARIF_OUTPUT" || echo "SARIF not generated"
-                '''
+                echo "📄 Publishing SARIF Report..."
+                archiveArtifacts artifacts: "$SARIF_OUTPUT", allowEmptyArchive: true, fingerprint: true
             }
         }
     }
 
-
     post {
         always {
-            archiveArtifacts artifacts: "${SARIF_OUTPUT}", fingerprint: true
+            echo "✅ Build completed"
         }
     }
 }
- 
