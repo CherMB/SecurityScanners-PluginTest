@@ -6,7 +6,7 @@ pipeline {
         CODEQL_DIR = "${env.WORKSPACE}/codeql"
         SOURCE_DIR = "${env.WORKSPACE}/test-go-project"
         DB_NAME = "my-app-db-1"
-        SARIF_OUTPUT = "result1.sarif"
+        SARIF_OUTPUT = "result1.sarif.json"
         GO_VERSION = "1.21.5"
         GO_DIR = "${env.WORKSPACE}/go"
         GOROOT = "${env.WORKSPACE}/go"
