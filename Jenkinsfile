@@ -30,4 +30,10 @@ pipeline {
             }
         }
     }
+
+    post {
+        always {
+            archiveArtifacts artifacts: "${OUTPUT_SARIF}", fingerprint: true
+        }
+    }
 }
