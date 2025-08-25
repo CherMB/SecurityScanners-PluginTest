@@ -5,7 +5,7 @@ pipeline {
         PYTHON_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz"
         PYTHON_DIR = "${env.WORKSPACE}/python"
         VENV_DIR = "${env.WORKSPACE}/venv"
-        CHECKOV_REPORT = "checkov-report.sarif"
+        CHECKOV_REPORT = "checkov-report.sarif.json"
         CHECKOV_TARGET_FILE = "${env.WORKSPACE}/minimain.tf"
         CHECKOV_DISABLE_GUIDE = "true"
         BC_API_KEY = ""
