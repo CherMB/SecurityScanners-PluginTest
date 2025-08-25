@@ -46,6 +46,11 @@ pipeline {
                 '''
             }
         }
-
     }
-} 
+
+    post {
+        always {
+            archiveArtifacts artifacts: "${GRYPE_REPORT}", fingerprint: true
+        }
+    }
+}
