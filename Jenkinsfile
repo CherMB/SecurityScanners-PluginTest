@@ -90,23 +90,30 @@ pipeline {
 
         // Step 7: Run Checkov Scan with SARIF Output (ensure clean JSON)
         stage('Run Checkov Scan') {
-            steps {
-                echo "🚨 Running Checkov scan on a specific file (main.tf)..."
-                sh '''
-                    source "$VENV_DIR/bin/activate"
-                    export SSL_CERT_FILE=$(python -m certifi)
+          steps {
+              echo "🚨 Running Checkov scan on a specific file (minimain.tf)..."
+              sh '''
+                  source /var/jenkins_home/workspace/ners-integrations_plugin-checkov/venv/bin/activate
+                  export SSL_CERT_FILE=/var/jenkins_home/workspace/ners-integrations_plugin-checkov/venv/lib/python3.11/site-packages/certifi/cacert.pem
 
-                    # Run Checkov with SARIF output, ensure no unwanted logging to the file
-                    echo ":white_check_mark: Running Checkov with SARIF output..."
-                    pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" 2>&1
+                  # Run Checkov with SARIF output, ensuring any errors or logs are captured
+                  echo ":white_check_mark: Running Checkov with SARIF output..."
+                  pipenv run checkov -f /var/jenkins_home/workspace/ners-integrations_plugin-checkov/minimain.tf -o sarif > "$CHECKOV_REPORT" 2>&1
 
-                    # Ensure no other output interferes with SARIF format
-                    grep -v "Terraform scan results" "$CHECKOV_REPORT" > temp_report.json && mv temp_report.json "$CHECKOV_REPORT"
+                  # Check if Checkov has errors and fail the pipeline explicitly if necessary
+                  if grep -q "ERROR" "$CHECKOV_REPORT"; then
+                      echo "Checkov scan failed, displaying error logs:"
+                      cat "$CHECKOV_REPORT"
+                      exit 1
+                  fi
 
-                    echo ":white_check_mark: SARIF report generated at $CHECKOV_REPORT"
-                '''
-            }
-        }
+                  # If no errors, ensure clean SARIF output
+                  grep -v "Terraform scan results" "$CHECKOV_REPORT" > temp_report.json && mv temp_report.json "$CHECKOV_REPORT"
+                  echo ":white_check_mark: SARIF report generated at $CHECKOV_REPORT"
+              '''
+          }
+}
+
 
         // Step 8: Display SARIF Report (first 20 lines for debugging)
         stage('Display SARIF Report') {
