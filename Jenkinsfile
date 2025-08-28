@@ -129,21 +129,17 @@ pipeline {
             }
         }
 
-        stage('Fetch Issues & Hotspots') {
+        stage('Generate sarif and archive') {
           steps {
               script {
                   echo "===== Library Function ====="
                   def workspacePath = env.WORKSPACE
-                  // Correctly set the SARIF_FILE variable
-                  env.SARIF_FILE = helper.getSarifOutput(env.SONAR_HOST, env.SONAR_TOKEN, env.PROJECT_KEY, workspacePath, SCANNER_VERSION)
-                  echo "${env.SARIF_FILE}"
+                  
+                  def sarifFilePath = helper.getSarifOutput(env.SONAR_HOST, env.SONAR_TOKEN, env.PROJECT_KEY, workspacePath, SCANNER_VERSION)
+
+                  archiveArtifacts artifacts: sarifFilePath, fingerprint: true
               }
           }
-      }
-        stage('Archive SARIF Report') {
-            steps {
-                archiveArtifacts artifacts: "${SARIF_FILE}", fingerprint: true
-            }
         }
     }
 }
