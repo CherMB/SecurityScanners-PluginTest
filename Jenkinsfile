@@ -96,9 +96,13 @@ pipeline {
                     source "$VENV_DIR/bin/activate"
                     export SSL_CERT_FILE=$(python -m certifi)
 
-                    # Run Checkov with SARIF output and redirect to the report
+                    # Run Checkov with SARIF output, ensure no unwanted logging to the file
                     echo ":white_check_mark: Running Checkov with SARIF output..."
-                    pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif --output "$CHECKOV_REPORT" > /dev/null 2>&1 || true
+                    pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" 2>&1
+
+                    # Ensure no other output interferes with SARIF format
+                    grep -v "Terraform scan results" "$CHECKOV_REPORT" > temp_report.json && mv temp_report.json "$CHECKOV_REPORT"
+
                     echo ":white_check_mark: SARIF report generated at $CHECKOV_REPORT"
                 '''
             }
