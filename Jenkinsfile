@@ -130,32 +130,16 @@ pipeline {
         }
 
         stage('Fetch Issues & Hotspots') {
-            steps {
-                script {
-                    // def issues = sh(
-                    //     script: """curl -s -u ${SONAR_TOKEN}: \\
-                    //       "${SONAR_HOST}/api/issues/search?componentKeys=${PROJECT_KEY}&ps=500" | ${JQ} '.'""",
-                    //     returnStdout: true
-                    // ).trim()
-                    // // echo "===== Issues ====="
-                    // // echo issues
-
-                    // def hotspots = sh(
-                    //     script: """curl -s -u ${SONAR_TOKEN}: \\
-                    //       "${SONAR_HOST}/api/hotspots/search?projectKey=${PROJECT_KEY}&ps=500" | ${JQ} '.'""",
-                    //     returnStdout: true
-                    // ).trim()
-                    // // echo "===== Security Hotspots ====="
-                    // // echo hotspots
-
-                    // Print the library function
-                    echo "===== Library Function ====="
-                    def workspacePath = env.WORKSPACE
-                    def ${SARIF_FILE} = helper.getSarifOutput(env.SONAR_HOST, env.SONAR_TOKEN, env.PROJECT_KEY , workspacePath, SCANNER_VERSION)
-                    echo "${SARIF_FILE}"
-                }
-            }
-        }
+          steps {
+              script {
+                  echo "===== Library Function ====="
+                  def workspacePath = env.WORKSPACE
+                  // Correctly set the SARIF_FILE variable
+                  env.SARIF_FILE = helper.getSarifOutput(env.SONAR_HOST, env.SONAR_TOKEN, env.PROJECT_KEY, workspacePath, SCANNER_VERSION)
+                  echo "${env.SARIF_FILE}"
+              }
+          }
+      }
         stage('Archive SARIF Report') {
             steps {
                 archiveArtifacts artifacts: "${SARIF_FILE}", fingerprint: true
