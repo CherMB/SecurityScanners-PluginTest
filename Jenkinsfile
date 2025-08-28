@@ -140,11 +140,13 @@ pipeline {
 
                 // Write the SARIF content to a .sarif file
                 writeFile file: "${workspacePath}/${env.SARIF_FILE}", text: sarifContent
-                
+                echo "File written to: ${workspacePath}/${env.SARIF_FILE}"  // Debug print
+
                 // Archive the SARIF file
-                archiveArtifacts artifacts: "${workspacePath}/${env.SARIF_FILE}", fingerprint: true
+                archiveArtifacts artifacts: "${env.SARIF_FILE}", fingerprint: true
             }
-          }
+        }
+
       }
     }
 }
