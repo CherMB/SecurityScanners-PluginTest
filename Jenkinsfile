@@ -73,28 +73,31 @@ pipeline {
                 sh '''
                     source "$VENV_DIR/bin/activate"
                     pip install certifi
-                    pipenv install checkov
+                    pipenv install checkov==3.2.460  # Ensure Checkov version is set correctly
                     echo "✅ Checkov and certifi installed."
                 '''
             }
         }
 
+        // Step 6: Run Checkov Scan (Ensure it outputs SARIF correctly)
         stage('Run Checkov Scan') {
             steps {
-                echo "🚨 Running Checkov scan on a specific file (main.tf)..."
+                echo "🚨 Running Checkov scan on the specific file (main.tf)..."
                 sh '''
                     source "$VENV_DIR/bin/activate"
                     export SSL_CERT_FILE=$(python -m certifi)
-                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif --output "$CHECKOV_REPORT" || true
+                    echo ":white_check_mark: Running Checkov..."
+                    # Ensure SARIF output is redirected properly
+                    pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" || true
                     echo ":white_check_mark: SARIF report generated at $CHECKOV_REPORT"
                 '''
             }
         }
 
-        // Step6: Display SARIF Report (first 20 lines for debugging)
+        // Step 7: Display SARIF Report (first 20 lines for debugging)
         stage('Display SARIF Report') {
             steps {
-                echo "📄 Displaying SARIF report:"
+                echo "📄 Displaying SARIF report (First 20 lines):"
                 sh '''
                     echo "=== Checkov SARIF Report (First 20 lines) ==="
                     head -n 20 "$CHECKOV_REPORT"
