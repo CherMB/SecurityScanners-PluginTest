@@ -8,8 +8,6 @@ pipeline {
         CHECKOV_REPORT = "checkov-report.sarif.json"
         CHECKOV_TARGET_FILE = "${env.WORKSPACE}/minimain.tf"
         CHECKOV_DISABLE_GUIDE = "true"
-        BC_API_KEY = ""
-        PRISMA_API_URL = ""
     }
 
     stages {
@@ -73,28 +71,40 @@ pipeline {
                 sh '''
                     source "$VENV_DIR/bin/activate"
                     pip install certifi
-                    pipenv install checkov==3.2.460  # Ensure Checkov version is set correctly
+                    pipenv install checkov==3.2.460  # Ensure Checkov version is correct
                     echo "✅ Checkov and certifi installed."
                 '''
             }
         }
 
-        // Step 6: Run Checkov Scan (Ensure it outputs SARIF correctly)
+        // Step 6: Checkov Version Debugging
+        stage('Checkov Version') {
+            steps {
+                echo "🔍 Checking Checkov Version"
+                sh '''
+                    source "$VENV_DIR/bin/activate"
+                    pipenv run checkov --version
+                '''
+            }
+        }
+
+        // Step 7: Run Checkov Scan with SARIF Output (ensure clean JSON)
         stage('Run Checkov Scan') {
             steps {
-                echo "🚨 Running Checkov scan on the specific file (main.tf)..."
+                echo "🚨 Running Checkov scan on a specific file (main.tf)..."
                 sh '''
                     source "$VENV_DIR/bin/activate"
                     export SSL_CERT_FILE=$(python -m certifi)
-                    echo ":white_check_mark: Running Checkov..."
-                    # Ensure SARIF output is redirected properly
-                    pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" || true
+
+                    # Run Checkov with SARIF output and redirect to the report
+                    echo ":white_check_mark: Running Checkov with SARIF output..."
+                    pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif --output "$CHECKOV_REPORT" > /dev/null 2>&1 || true
                     echo ":white_check_mark: SARIF report generated at $CHECKOV_REPORT"
                 '''
             }
         }
 
-        // Step 7: Display SARIF Report (first 20 lines for debugging)
+        // Step 8: Display SARIF Report (first 20 lines for debugging)
         stage('Display SARIF Report') {
             steps {
                 echo "📄 Displaying SARIF report (First 20 lines):"
