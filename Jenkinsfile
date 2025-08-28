@@ -11,6 +11,7 @@ pipeline {
         JAVA_HOME = "${WORKSPACE}/jdk17"
         PATH = "${WORKSPACE}/jdk17/bin:${PATH}"
         JQ = "${WORKSPACE}/bin/jq"
+        SARIF_FILE = "sonar-report.sarif"
     }
 
     stages {
@@ -150,9 +151,14 @@ pipeline {
                     // Print the library function
                     echo "===== Library Function ====="
                     def workspacePath = env.WORKSPACE
-                    def sarifout = helper.getSarifOutput(env.SONAR_HOST, env.SONAR_TOKEN, env.PROJECT_KEY , workspacePath, SCANNER_VERSION)
-                    echo "${sarifout}"
+                    def ${SARIF_FILE} = helper.getSarifOutput(env.SONAR_HOST, env.SONAR_TOKEN, env.PROJECT_KEY , workspacePath, SCANNER_VERSION)
+                    echo "${SARIF_FILE}"
                 }
+            }
+        }
+        stage('Archive SARIF Report') {
+            steps {
+                archiveArtifacts artifacts: "${SARIF_FILE}", fingerprint: true
             }
         }
     }
