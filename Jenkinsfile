@@ -36,5 +36,5 @@ pipeline {
             archiveArtifacts artifacts: "${OUTPUT_SARIF}", fingerprint: true
         }
     }
-}
+} 
  
