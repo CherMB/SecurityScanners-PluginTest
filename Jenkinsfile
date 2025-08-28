@@ -131,15 +131,20 @@ pipeline {
 
         stage('Generate sarif and archive') {
           steps {
-              script {
-                  echo "===== Library Function ====="
-                  def workspacePath = env.WORKSPACE
-                  
-                  def sarifFilePath = helper.getSarifOutput(env.SONAR_HOST, env.SONAR_TOKEN, env.PROJECT_KEY, workspacePath, SCANNER_VERSION)
+            script {
+                echo "===== Library Function ====="
+                def workspacePath = env.WORKSPACE
 
-                  archiveArtifacts artifacts: sarifFilePath, fingerprint: true
-              }
+                // Get the SARIF content
+                def sarifContent = helper.getSarifOutput(env.SONAR_HOST, env.SONAR_TOKEN, env.PROJECT_KEY, workspacePath, SCANNER_VERSION)
+
+                // Write the SARIF content to a .sarif file
+                writeFile file: "${workspacePath}/${env.SARIF_FILE}", text: sarifContent
+                
+                // Archive the SARIF file
+                archiveArtifacts artifacts: "${workspacePath}/${env.SARIF_FILE}", fingerprint: true
+            }
           }
-        }
+      }
     }
 }
