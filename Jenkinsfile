@@ -85,35 +85,13 @@ pipeline {
                 sh '''
                     source "$VENV_DIR/bin/activate"
                     export SSL_CERT_FILE=$(python -m certifi)
-                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" || true
+                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif --output "$CHECKOV_REPORT" || true
+                    echo ":white_check_mark: SARIF report generated at $CHECKOV_REPORT"
                 '''
             }
         }
 
-        // Step 6: Register SARIF Report with CloudBees Plugin
-        stage('Publish Security Results to CloudBees Dashboard') {
-            steps {
-                echo "🔒 Registering security scan result with CloudBees plugin..."
-                script {
-                    registerBuildArtifactMetadata(
-                        name: "checkov-security-scan",
-                        version: "1.0.0",
-                        type: "security-scan",
-                        url: "https://jenkins-ninja-testing.saas-preprod.beescloud.com/job/QA-test-security-scanners-integrations/job/checkov/lastSuccessfulBuild/artifact/checkov-report.sarif",  
-                        digest: "6f637064707039346163663237383938",  
-                        label: "qa",
-                        security_scan: [
-                            [
-                                file: "$CHECKOV_REPORT",
-                                time: new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-                                report: readFile(file: "$CHECKOV_REPORT")
-                            ]
-                        ]
-                    )
-                }
-            }
-        }
-
+        // Step6: Display SARIF Report (first 20 lines for debugging)
         stage('Display SARIF Report') {
             steps {
                 echo "📄 Displaying SARIF report:"
@@ -131,4 +109,3 @@ pipeline {
         }
     }
 }
-    
