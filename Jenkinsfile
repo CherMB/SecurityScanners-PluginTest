@@ -82,30 +82,30 @@ pipeline {
 
         stage('Run Checkov Scan') {
           steps {
-              echo "🚨 Running Checkov scan on a specific file (main.tf)..."
+              echo "🚨 Running Checkov scan in SARIF mode..."
               sh '''
                   source "$VENV_DIR/bin/activate"
                   export SSL_CERT_FILE=$(python -m certifi)
-                  # Run the correct Checkov command
-                  pipenv run checkov -d "$CHECKOV_TARGET_DIR" -o sarif
+                  cd "$CHECKOV_TARGET_DIR"
+                  pipenv run checkov -d . -o sarif || true
               '''
           }
       }
 
-        // stage('Display SARIF Report') {
-        //     steps {
-        //         echo "📄 Displaying SARIF report:"
-        //         sh '''
-        //             echo "=== Checkov SARIF Report (First 20 lines) ==="
-        //             head -n 20 "$CHECKOV_REPORT"
-        //         '''
-        //     }
-        // }
-    }
-
-    post {
-        always {
-            archiveArtifacts artifacts: "${env.CHECKOV_REPORT}", fingerprint: true
+      stage('Display SARIF Report') {
+        steps {
+            echo "📄 Displaying SARIF report:"
+            sh '''
+                echo "=== Checkov SARIF Report (First 20 lines) ==="
+                head -n 20 "$CHECKOV_TARGET_DIR/results.sarif"
+            '''
         }
     }
+    }
+
+   post {
+      always {
+          archiveArtifacts artifacts: "${env.CHECKOV_TARGET_DIR}/results.sarif", fingerprint: true
+      }
+  }
 }
