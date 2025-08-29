@@ -81,15 +81,16 @@ pipeline {
         }
 
         stage('Run Checkov Scan') {
-            steps {
-                echo "🚨 Running Checkov scan on a specific file (main.tf)..."
-                sh '''
-                    source "$VENV_DIR/bin/activate"
-                    export SSL_CERT_FILE=$(python -m certifi)
-                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" || true
-                '''
-            }
-        }
+          steps {
+              echo "🚨 Running Checkov scan on a specific file (main.tf)..."
+              sh '''
+                  source "$VENV_DIR/bin/activate"
+                  export SSL_CERT_FILE=$(python -m certifi)
+                  # Run the correct Checkov command
+                  pipenv run checkov -d "$CHECKOV_TARGET_DIR" -o sarif > "$CHECKOV_REPORT" || true
+              '''
+          }
+      }
 
         stage('Display SARIF Report') {
             steps {
