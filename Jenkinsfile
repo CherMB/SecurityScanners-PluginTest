@@ -80,30 +80,23 @@ pipeline {
             }
         }
 
-        // Step 6: Run Checkov Scan (with SARIF output)
         stage('Run Checkov Scan') {
             steps {
                 echo "🚨 Running Checkov scan on a specific file (main.tf)..."
                 sh '''
                     source "$VENV_DIR/bin/activate"
                     export SSL_CERT_FILE=$(python -m certifi)
-                    echo "Running Checkov on file: $CHECKOV_TARGET_FILE"
-                    pipenv run checkov -d "$CHECKOV_TARGET_DIR" -o sarif --output-file "$CHECKOV_REPORT" || true
+                    CHECKOV_DISABLE_GUIDE=true pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" || true
                 '''
             }
         }
 
-        // Step 7: Display SARIF Report
         stage('Display SARIF Report') {
             steps {
-                echo "📄 Displaying SARIF report (First 20 lines):"
+                echo "📄 Displaying SARIF report:"
                 sh '''
-                    if [ -f "$CHECKOV_REPORT" ]; then
-                        echo "=== Checkov SARIF Report (First 20 lines) ==="
-                        head -n 20 "$CHECKOV_REPORT"
-                    else
-                        echo "❌ No SARIF report found!"
-                    fi
+                    echo "=== Checkov SARIF Report (First 20 lines) ==="
+                    head -n 20 "$CHECKOV_REPORT"
                 '''
             }
         }
