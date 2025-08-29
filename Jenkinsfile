@@ -91,7 +91,12 @@ pipeline {
                 source "$VENV_DIR/bin/activate"
                 export SSL_CERT_FILE=$(python -m certifi)
                 CHECKOV_DISABLE_GUIDE=true
-                pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif | ${JQ} -c '.' > "$CHECKOV_REPORT" || true
+                pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT"
+                if [ -s "$CHECKOV_REPORT" ]; then
+                  echo "✅ SARIF report generated successfully."
+                else
+                  echo "❌ No issues found or failed to generate SARIF report."
+                fi
                 '''
             }
         }
