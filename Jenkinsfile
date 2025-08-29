@@ -6,8 +6,7 @@ pipeline {
         PYTHON_DIR = "${env.WORKSPACE}/python"
         VENV_DIR = "${env.WORKSPACE}/venv"
         CHECKOV_REPORT = "checkov-report.sarif"
-        CHECKOV_TARGET_DIR = "${env.WORKSPACE}/terragoat"
-        CHECKOV_TARGET_FILE = "${env.WORKSPACE}/minimain.tf"
+        CHECKOV_TARGET_FILE = "${env.WORKSPACE}/minimain.tf"  
         CHECKOV_DISABLE_GUIDE = "true"
         BC_API_KEY = ""
         PRISMA_API_URL = ""
@@ -80,32 +79,34 @@ pipeline {
             }
         }
 
+        // Step 6: Run Checkov Scan
         stage('Run Checkov Scan') {
-          steps {
-              echo "🚨 Running Checkov scan in SARIF mode..."
-              sh '''
-                  source "$VENV_DIR/bin/activate"
-                  export SSL_CERT_FILE=$(python -m certifi)
-                  cd "$CHECKOV_TARGET_DIR"
-                  pipenv run checkov -d . -o sarif || true
-              '''
-          }
-      }
+            steps {
+                echo "🚨 Running Checkov scan in SARIF mode..."
+                sh '''
+                    source "$VENV_DIR/bin/activate"
+                    export SSL_CERT_FILE=$(python -m certifi)
+                    # Run Checkov on the specific file ($CHECKOV_TARGET_FILE)
+                    pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif || true
+                '''
+            }
+        }
 
-      stage('Display SARIF Report') {
-        steps {
-            echo "📄 Displaying SARIF report:"
-            sh '''
-                echo "=== Checkov SARIF Report (First 20 lines) ==="
-                head -n 20 "$CHECKOV_TARGET_DIR/results.sarif"
-            '''
+        // Step 7: Display SARIF Report
+        stage('Display SARIF Report') {
+            steps {
+                echo "📄 Displaying SARIF report:"
+                sh '''
+                    echo "=== Checkov SARIF Report (First 20 lines) ==="
+                    head -n 20 "results.sarif"
+                '''
+            }
         }
     }
-    }
 
-   post {
-    always {
-        archiveArtifacts artifacts: "terragoat/results.sarif", fingerprint: true
+    post {
+        always {
+            archiveArtifacts artifacts: "results.sarif", fingerprint: true
+        }
     }
-}
 }
