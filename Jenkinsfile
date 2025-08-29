@@ -6,11 +6,28 @@ pipeline {
         VENV_DIR = "${env.WORKSPACE}/venv"
         CHECKOV_REPORT = "checkov-report.sarif.json"
         CHECKOV_TARGET_FILE = "${env.WORKSPACE}/minimain.tf"
+        JQ = "${WORKSPACE}/bin/jq"
         CHECKOV_DISABLE_GUIDE = "true"
         BC_API_KEY = ""
         PRISMA_API_URL = ""
     }
     stages {
+        stage('Install JDK') {
+            steps {
+                sh '''
+                    echo "Downloading JDK..."
+                    curl -sLo openjdk.tar.gz https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.14%2B7/OpenJDK17U-jdk_x64_linux_hotspot_17.0.14_7.tar.gz
+                    tar -xzf openjdk.tar.gz
+                    rm -rf jdk17 && mv jdk-17* jdk17
+                    mkdir -p ${WORKSPACE}/bin
+                    if [ ! -f ${WORKSPACE}/bin/jq ]; then
+                        echo "Downloading jq..."
+                        curl -sLo ${WORKSPACE}/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+                        chmod +x ${WORKSPACE}/bin/jq
+                    fi
+                '''
+            }
+        }
         stage('Download Prebuilt Python') {
             steps {
                 echo ":arrow_down: Downloading prebuilt Python binary..."
@@ -74,7 +91,7 @@ pipeline {
                 source "$VENV_DIR/bin/activate"
                 export SSL_CERT_FILE=$(python -m certifi)
                 CHECKOV_DISABLE_GUIDE=true
-                pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif > "$CHECKOV_REPORT" || true
+                pipenv run checkov -f "$CHECKOV_TARGET_FILE" -o sarif | ${JQ} -c '.' > "$CHECKOV_REPORT" || true
                 '''
             }
         }
