@@ -104,8 +104,8 @@ pipeline {
     }
 
    post {
-      always {
-          archiveArtifacts artifacts: "${env.CHECKOV_TARGET_DIR}/results.sarif", fingerprint: true
-      }
-  }
+    always {
+        archiveArtifacts artifacts: "terragoat/results.sarif", fingerprint: true
+    }
+}
 }
