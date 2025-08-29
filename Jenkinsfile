@@ -87,20 +87,20 @@ pipeline {
                   source "$VENV_DIR/bin/activate"
                   export SSL_CERT_FILE=$(python -m certifi)
                   # Run the correct Checkov command
-                  pipenv run checkov -d "$CHECKOV_TARGET_DIR" -o sarif > "$CHECKOV_REPORT" || true
+                  pipenv run checkov -d "$CHECKOV_TARGET_DIR" -o sarif
               '''
           }
       }
 
-        stage('Display SARIF Report') {
-            steps {
-                echo "📄 Displaying SARIF report:"
-                sh '''
-                    echo "=== Checkov SARIF Report (First 20 lines) ==="
-                    head -n 20 "$CHECKOV_REPORT"
-                '''
-            }
-        }
+        // stage('Display SARIF Report') {
+        //     steps {
+        //         echo "📄 Displaying SARIF report:"
+        //         sh '''
+        //             echo "=== Checkov SARIF Report (First 20 lines) ==="
+        //             head -n 20 "$CHECKOV_REPORT"
+        //         '''
+        //     }
+        // }
     }
 
     post {
