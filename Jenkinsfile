@@ -2,26 +2,29 @@ pipeline {
     agent any
 
     environment {
-        CODEQL_URL = "https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz"
-        CODEQL_DIR = "${env.WORKSPACE}/codeql"
-        SOURCE_DIR = "${env.WORKSPACE}/test-go-project"
-        DB_NAME = "my-app-db-1"
-        SARIF_OUTPUT = "result1.sarif.json"
-        GO_VERSION = "1.21.5"
-        GO_DIR = "${env.WORKSPACE}/go"
-        GOROOT = "${env.WORKSPACE}/go"
-        GOPATH = "${env.WORKSPACE}/go-packages"
-        PATH = "${env.WORKSPACE}/go/bin:${env.PATH}"
+        // Configuration
+        CODEQL_URL     = "https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz"
+        CODEQL_DIR     = "${env.WORKSPACE}/codeql"
+        SOURCE_DIR     = "${env.WORKSPACE}/test-go-project"
+        DB_NAME        = "my-app-db-1"
+        SARIF_OUTPUT   = "result1.sarif.json"
+        GO_VERSION     = "1.21.5"
+        GO_DIR         = "${env.WORKSPACE}/go"
+        GOROOT         = "${env.WORKSPACE}/go"
+        GOPATH         = "${env.WORKSPACE}/go-packages"
+        PATH           = "${env.WORKSPACE}/go/bin:${env.PATH}"
     }
 
     stages {
+
         stage('Install Go') {
             steps {
                 echo "⬇️ Installing Go..."
                 sh '''
-                    export GO_TEMP_DIR=$(mktemp -d)
-                    curl -LO "https://go.dev/dl/go1.21.5.linux-amd64.tar.gz"
-                    tar -xzf go1.21.5.linux-amd64.tar.gz -C "$GO_TEMP_DIR"
+                    set -e
+                    GO_TEMP_DIR=$(mktemp -d)
+                    curl -LO "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
+                    tar -xzf go${GO_VERSION}.linux-amd64.tar.gz -C "$GO_TEMP_DIR"
                     rm -rf "$GO_DIR"
                     mv "$GO_TEMP_DIR/go" "$GO_DIR"
                     echo "✅ Go installed at $GO_DIR"
@@ -33,6 +36,7 @@ pipeline {
             steps {
                 echo "⬇️ Downloading CodeQL bundle..."
                 sh '''
+                    set -e
                     mkdir -p "$CODEQL_DIR"
                     curl -L "$CODEQL_URL" -o codeql-bundle.tar.gz
                     tar -xzf codeql-bundle.tar.gz -C "$CODEQL_DIR" --strip-components=1
@@ -45,6 +49,7 @@ pipeline {
             steps {
                 echo "📦 Creating CodeQL database from source..."
                 sh '''
+                    set -e
                     rm -rf "$DB_NAME"
                     export PATH="$GO_DIR/bin:$PATH"
                     export GOROOT="$GO_DIR"
@@ -60,6 +65,11 @@ pipeline {
             steps {
                 echo "🔍 Running CodeQL analysis..."
                 sh '''
+                    set -e
+                    # Clean up any duplicate or conflicting packs
+                    "$CODEQL_DIR/codeql" cleanup
+
+                    # Perform analysis
                     "$CODEQL_DIR/codeql" database analyze "$DB_NAME" \
                       codeql/go-queries \
                       --format=sarifv2.1.0 \
@@ -80,6 +90,9 @@ pipeline {
         always {
             echo "✅ Build completed"
         }
+
+        failure {
+            echo "❌ Build failed"
+        }
     }
 }
-     
