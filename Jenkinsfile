@@ -31,18 +31,13 @@ pipeline {
 
         stage('Download and Extract CodeQL') {
     steps {
-        echo "⬇️ Checking for existing CodeQL bundle..."
+        echo "⬇️ Downloading CodeQL bundle..."
         sh '''
-            if [ ! -f "$CODEQL_DIR/codeql" ]; then
-                echo "📦 CodeQL not found. Downloading..."
-                rm -rf "$CODEQL_DIR"
-                mkdir -p "$CODEQL_DIR"
-                curl -L "$CODEQL_URL" -o codeql-bundle.tar.gz
-                tar -xzf codeql-bundle.tar.gz -C "$CODEQL_DIR" --strip-components=1
-                echo "✅ CodeQL installed to $CODEQL_DIR"
-            else
-                echo "✅ CodeQL already present, skipping download."
-            fi
+            rm -rf "$CODEQL_DIR"        # Clean old bundles
+            mkdir -p "$CODEQL_DIR"
+            curl -L "$CODEQL_URL" -o codeql-bundle.tar.gz
+            tar -xzf codeql-bundle.tar.gz -C "$CODEQL_DIR" --strip-components=1
+            echo "✅ CodeQL installed to $CODEQL_DIR"
         '''
     }
 }
