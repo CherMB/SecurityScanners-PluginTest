@@ -2,28 +2,26 @@ pipeline {
     agent any
 
     environment {
-        // Configuration
-        CODEQL_URL     = "https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz"
-        CODEQL_DIR     = "${env.WORKSPACE}/codeql"
-        SOURCE_DIR     = "${env.WORKSPACE}/test-go-project"
-        DB_NAME        = "my-app-db-1"
-        SARIF_OUTPUT   = "result1.sarif.json"
-        GO_VERSION     = "1.21.5"
-        GO_DIR         = "${env.WORKSPACE}/go"
-        GOROOT         = "${env.WORKSPACE}/go"
-        GOPATH         = "${env.WORKSPACE}/go-packages"
-        PATH           = "${env.WORKSPACE}/go/bin:${env.PATH}"
+        GO_VERSION = "1.21.5"
+        CODEQL_BUNDLE_URL = "https://github.com/github/codeql-action/releases/latest/download/codeql-bundle-linux64.tar.gz"
+        CODEQL_DIR = "${WORKSPACE}/codeql"
+        GO_DIR = "${WORKSPACE}/go"
+        GOPATH = "${WORKSPACE}/go-packages"
+        GO_ROOT = "${GO_DIR}"
+        PATH = "${GO_DIR}/bin:${PATH}"
+        TEST_GO_PROJECT_DIR = "${WORKSPACE}/test-go-project"
+        DB_NAME = "my-app-db-1"
+        SARIF_OUTPUT = "results.sarif"
     }
 
     stages {
-
         stage('Install Go') {
             steps {
                 echo "⬇️ Installing Go..."
                 sh '''
                     set -e
                     GO_TEMP_DIR=$(mktemp -d)
-                    curl -LO "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
+                    curl -LO https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
                     tar -xzf go${GO_VERSION}.linux-amd64.tar.gz -C "$GO_TEMP_DIR"
                     rm -rf "$GO_DIR"
                     mv "$GO_TEMP_DIR/go" "$GO_DIR"
@@ -38,7 +36,7 @@ pipeline {
                 sh '''
                     set -e
                     mkdir -p "$CODEQL_DIR"
-                    curl -L "$CODEQL_URL" -o codeql-bundle.tar.gz
+                    curl -L "$CODEQL_BUNDLE_URL" -o codeql-bundle.tar.gz
                     tar -xzf codeql-bundle.tar.gz -C "$CODEQL_DIR" --strip-components=1
                     echo "✅ CodeQL installed to $CODEQL_DIR"
                 '''
@@ -55,8 +53,8 @@ pipeline {
                     export GOROOT="$GO_DIR"
                     export GOPATH="$GOPATH"
                     "$CODEQL_DIR/codeql" database create "$DB_NAME" \
-                      --language=go \
-                      --source-root="$SOURCE_DIR"
+                        --language=go \
+                        --source-root="$TEST_GO_PROJECT_DIR"
                 '''
             }
         }
@@ -66,33 +64,31 @@ pipeline {
                 echo "🔍 Running CodeQL analysis..."
                 sh '''
                     set -e
-                    # Clean up any duplicate or conflicting packs
-                    "$CODEQL_DIR/codeql" cleanup
-
-                    # Perform analysis
                     "$CODEQL_DIR/codeql" database analyze "$DB_NAME" \
-                      codeql/go-queries \
-                      --format=sarifv2.1.0 \
-                      --output="$SARIF_OUTPUT"
+                        codeql/go-queries \
+                        --format=sarifv2.1.0 \
+                        --output="$SARIF_OUTPUT"
                 '''
             }
         }
 
         stage('Publish SARIF to Dashboard') {
+            when {
+                expression { fileExists("${SARIF_OUTPUT}") }
+            }
             steps {
-                echo "📄 Publishing SARIF Report..."
-                archiveArtifacts artifacts: "$SARIF_OUTPUT", allowEmptyArchive: true, fingerprint: true
+                echo "📤 SARIF file ready at ${SARIF_OUTPUT}"
+                // Add your actual SARIF publishing logic here (e.g., upload to GitHub, etc.)
             }
         }
     }
 
     post {
-        always {
-            echo "✅ Build completed"
+        success {
+            echo '✅ Build completed'
         }
-
         failure {
-            echo "❌ Build failed"
+            echo '❌ Build failed'
         }
     }
 }
