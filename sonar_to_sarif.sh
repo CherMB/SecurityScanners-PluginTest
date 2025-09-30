@@ -25,10 +25,22 @@ severity_map() {
   case "$sev" in
     MINOR) echo "LOW" ;;
     MAJOR|HIGH) echo "HIGH" ;;
-    CRITICAL|BLOCKER) echo "VERY-HIGH" ;;
+    CRITICAL|BLOCKER) echo "VERY HIGH" ;;
     MEDIUM) echo "MEDIUM" ;;
     LOW) echo "LOW" ;;
     *) echo "INFORMATION" ;;
+  esac
+}
+
+level_map() {
+  local lev="$1"
+  case "$lev" in
+    MINOR) echo "warning" ;;
+    MAJOR|HIGH) echo "error" ;;
+    CRITICAL|BLOCKER) echo "error" ;;
+    MEDIUM) echo "warning" ;;
+    LOW) echo "warning" ;;
+    *) echo "none" ;;
   esac
 }
 
@@ -86,7 +98,7 @@ map_issues_to_sarif() {
 
     $jq_bin -n \
       --arg rule "$rule" \
-      --arg level "$(severity_map "$severity")" \
+      --arg level "$(level_map "$severity")" \
       --arg type "$type" \
       --arg message "$message" \
       --arg file "$file_path" \
@@ -135,7 +147,7 @@ map_hotspots_to_sarif() {
 
     $jq_bin -n \
       --arg rule "$rule" \
-      --arg level "$(echo "$severity" | tr '[:lower:]' '[:upper:]')" \
+      --arg level "$(level_map "$severity")" \
       --arg type "HOTSPOT" \
       --arg message "$message" \
       --arg file "$file_path" \
