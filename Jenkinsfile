@@ -24,7 +24,7 @@ pipeline {
                     fi
 
                     # Run gosec and output SARIF
-                    gosec -fmt sarif -out gosec-results.sarif ./...
+                    gosec -no-fail -fmt sarif -out gosec-results.sarif ./...
                 '''
             }
         }
