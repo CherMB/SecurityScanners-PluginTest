@@ -104,9 +104,26 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            archiveArtifacts artifacts: "results.sarif", fingerprint: true
+    stage('Register Security Scan') {
+            steps {
+                script {
+                    if (fileExists("results.sarif")) {
+                        echo "File exists, registering scan..."
+                        registerSecurityScan(
+                            artifacts: "results.sarif",
+                            archive: false
+                        )
+                    } else {
+                        error "results.sarif not found!"
+                    }
+                }
+            }
         }
     }
+
+    // post {
+    //     always {
+    //         archiveArtifacts artifacts: "results.sarif", fingerprint: true
+    //     }
+    // }
 }
