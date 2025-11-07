@@ -102,7 +102,7 @@ pipeline {
                 '''
             }
         }
-    }
+    
 
     stage('Register Security Scan') {
             steps {
@@ -119,6 +119,8 @@ pipeline {
                 }
             }
         }
+
+    }
     
 
     // post {
