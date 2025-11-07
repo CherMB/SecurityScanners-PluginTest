@@ -28,11 +28,27 @@ pipeline {
                 '''
             }
         }
-    }
 
-    post {
-        always {
-            archiveArtifacts artifacts: 'gosec-results.sarif', fingerprint: true
+        stage('Register Security Scan') {
+            steps {
+                script {
+                    if (fileExists("gosec-results.sarif")) {
+                        echo "File exists, registering scan..."
+                        registerSecurityScan(
+                            artifacts: "gosec-results.sarif",
+                            archive: false
+                        )
+                    } else {
+                        error "anchore-findings.json not found!"
+                    }
+                }
+            }
         }
     }
+
+    // post {
+    //     always {
+    //         archiveArtifacts artifacts: 'gosec-results.sarif', fingerprint: true
+    //     }
+    // }
 }
