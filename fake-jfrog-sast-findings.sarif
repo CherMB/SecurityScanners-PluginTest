@@ -5,7 +5,7 @@
     {
       "tool": {
         "driver": {
-          "name": "JFrog SAST (Fake)",
+          "name": "JFrog SAST",
           "rules": [
             {
               "id": "java-sql-injection",
