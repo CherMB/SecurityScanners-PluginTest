@@ -108,9 +108,8 @@ stage("Register Fake Security Scan") {
 
         registerSecurityScan(
           artifacts: file,        
-          format: "sarif",
           scanner: "jfrog-xray-sast",
-          archive: true
+          archive: false
         )
       }
     }
