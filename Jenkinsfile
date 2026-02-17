@@ -107,7 +107,7 @@ stage("Register Fake Security Scan") {
         echo "✅ Registering SARIF scan: ${file}"
 
         registerSecurityScan(
-          artifacts: file,        
+          artifacts: "${file}",
           format: "sarif",
           scanner: "jfrog-xray-sast",
           archive: true
